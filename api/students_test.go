@@ -25,10 +25,37 @@ func setupRouter() (*http.ServeMux, *mongo.Client) {
 	router.HandleFunc("/students", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodDelete {
 			DeleteStudent(client, "SIPresentation", "Students", w, r)
+		} else if r.Method == http.MethodPost {
+			CreateStudent(client, "SIPresentation", "Students", w, r)
 		}
 	})
 
 	return router, client
+}
+
+func TestCreateStudent(t *testing.T) {
+	router, _ := setupRouter()
+
+	// TEST 1
+	student1 := map[string]string{
+		"name": "Nuno",
+		"age":  "24",
+	}
+
+	createJSON, _ := json.Marshal(student1)
+
+	req := httptest.NewRequest(http.MethodPost, "/students", bytes.NewBuffer(createJSON))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("Expected status code 400, got %v", w.Code)
+	}
+
+	// TEST 2...
+
 }
 
 func TestDeleteStudent(t *testing.T) {
@@ -43,6 +70,7 @@ func TestDeleteStudent(t *testing.T) {
 		"age":  16,
 	})
 
+	// TEST 1
 	incorrectId := map[string]string{
 		"id": "67342a29b808c1f1f6c4059x",
 	}
@@ -58,6 +86,7 @@ func TestDeleteStudent(t *testing.T) {
 		t.Fatalf("Expected status code 400, got %v", w.Code)
 	}
 
+	// TEST 2
 	notFoundId := map[string]string{
 		"id": "67342a29b808c1f1f6c4059e",
 	}
@@ -73,6 +102,7 @@ func TestDeleteStudent(t *testing.T) {
 		t.Fatalf("Expected status code 404, got %v", w.Code)
 	}
 
+	// TEST 3
 	correctId := map[string]interface{}{
 		"id": result.InsertedID,
 	}
